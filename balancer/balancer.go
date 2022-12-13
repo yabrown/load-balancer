@@ -23,13 +23,12 @@ func newBalancer(servers []*Server) *Balancer {
 
 func (balancer *Balancer) assign_request(request Request) {
 	servers := balancer.servers // so that don't have to recompute each time
-	champ := servers[0].    
-	// find least loaded server  
+	//champ := servers[0]
+	// find least loaded server
 	for i := range servers {
 		if !(servers[i].online) { // if server is dead, ignore it
 			continue
-		} 
-		if servers[i].
+		}
 	}
 
 }
