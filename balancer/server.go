@@ -1,7 +1,7 @@
 package balancer
 
 import (
-	"math/rand"
+	"fmt"
 	"time"
 )
 
@@ -11,6 +11,7 @@ type Request struct {
 }
 
 type Server struct {
+	id            int
 	q             queue
 	cores         int
 	online        bool
@@ -19,26 +20,34 @@ type Server struct {
 	queueLength   int
 }
 
-func newRequest(id int) (request *Request) {
+//defined load
+func NewRequest(id int, load int) (request *Request) {
 	request = new(Request)
-	request.load = rand.Intn(100) + 1 // +1 since the random generation starts at 0
 	request.id = id
+	request.load = load
 	return request
 }
 
-func newServer() (server *Server) {
-	server = new(Server)
+func NewServer(id int, cores int) *Server {
+	server := new(Server)
+	server.id = id
 	server.q = newQueue()
-	server.cores = rand.Intn(4) + 1 // +1 since the random generation starts at 0
+	server.cores = cores
 	server.online = false
 	server.loadOnQueue = 0
 	server.timeCompleted = 0
+	if verbose {
+		fmt.Printf("Server created: %+v\n", *server)
+	} // formatting dereferences and prints fields
 	return server
 }
 
-func (server *Server) add_request(request *Request) {
+func (server *Server) Add_request(request *Request) {
+	if verbose {
+		fmt.Printf("Adding request %d to server %d\n", request.id, server.id)
+	}
 	if server.online {
-		server.q.push(request)
+		server.q = server.q.push(request)
 		server.loadOnQueue += request.load
 		server.queueLength += 1
 	}
@@ -46,16 +55,26 @@ func (server *Server) add_request(request *Request) {
 
 // do next task on queue, which just involves waiting the amount of time divided by cores
 // return when the task completes
-func (server *Server) do_request() {
+func (server *Server) Handle_request() {
 	if server.online {
-		nextReq, _ := server.q.pop()
+		if verbose {
+			fmt.Printf("Server %d handling next request.\n", server.id)
+		}
+		if verbose {
+			fmt.Printf("\tStart handling: %+v\n", *server)
+		} // formatting dereferences and prints fields
+		var nextReq *Request
+		nextReq, server.q = server.q.pop()
 
 		taskTime := float32(nextReq.load / server.cores)
-		time.Sleep(time.Duration(taskTime) * time.Millisecond)
+		time.Sleep(time.Duration(taskTime) * time.Second)
 
 		server.timeCompleted += taskTime
 		server.queueLength -= 1
 		server.loadOnQueue -= nextReq.load
+		if verbose {
+			fmt.Printf("\tFinished handling: %+v\n", *server)
+		} // formatting dereferences and prints fields
 	}
 
 }
@@ -69,11 +88,30 @@ func (server *Server) State() (bool, int) {
 	}
 }
 
-func (server *Server) die() {
+func (server *Server) Die() {
 	// need to send
 	server.online = false
 }
 
-func (server *Server) wake_up() {
+func (server *Server) Wake_up() {
 	server.online = true
+
+}
+
+// call as goroutine. keeps handling whatevers in front of the queue, returns when the server dies
+func (server *Server) Work() {
+	if verbose {
+		fmt.Printf("Server %d started listening.\n", server.id)
+	}
+	for {
+		if len(server.q) != 0 {
+			server.Handle_request()
+		}
+		if !server.online {
+			if verbose {
+				fmt.Printf("Server %d stopped listening.\n", server.id)
+			}
+			return
+		}
+	}
 }
