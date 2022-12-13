@@ -2,24 +2,40 @@ package balancer
 
 import (
 	"fmt"
-	"time"
 )
 
 // average response time (latency) per task
-func MeasureResponseTime(b *Balancer) (float32, float32) {
+func MeasureAverageResponseTime(b *Balancer) float32 {
 	// the balancer has an instance variable tracking the total wall-clock time
 	// for each task that has been completed
 	// divide that by the balance instance variable tracking the total number of completed tasks
 
-	// also compute the average load per task (sum over all servers the timeCompleted * load_per_core)/num of completed tasks
-	// need to check if the units for this are equal or not
-	for len(b.acks) != 0 {
+	var totalTime float32 = 0
+	for _, stats := range b.request_stats {
+
+		totalTime += float32(stats.duration.Seconds())
 
 	}
 
-	elapsedTime := b.totalTime / float32(b.totalTasks)
+	fmt.Println("Number of tasks:", len(b.request_stats))
 
-	return elapsedTime, 0
+	averageTime := totalTime / float32(len(b.request_stats))
+
+	return averageTime
+
+}
+
+// average load of a task
+
+//compute the average load per task (sum over all servers the timeCompleted * load_per_core)/num of completed tasks
+// need to check if the units for this are equal or not
+func MeasureAverageTaskTime(b *Balancer) float32 {
+	var totalLoad float32 = 0
+	for _, s := range b.servers {
+		totalLoad += s.timeCompleted * float32(s.cores)
+	}
+
+	return totalLoad / float32(len(b.request_stats))
 
 }
 

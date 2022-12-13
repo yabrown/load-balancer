@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var verbose bool = false
+var verbose bool = true
 
 type stats struct {
 	start_time time.Time     // set as soon as it comes in (both assign_request functions)
@@ -43,6 +43,9 @@ func (balancer *Balancer) Assign_request(request *Request) {
 	//first, create stats object
 	balancer.request_stats[request] = new(stats)
 
+	balancer.request_stats[request].handled = false
+	balancer.request_stats[request].start_time = time.Now()
+
 	servers := balancer.servers
 	champ_server, champ_load := 0, math.Inf(1)
 	//find next weighted least-loaded live server
@@ -66,6 +69,11 @@ func (balancer *Balancer) Assign_request(request *Request) {
 func (balancer *Balancer) Assign_request_round_robin(request *Request) {
 	servers := balancer.servers
 
+	balancer.request_stats[request] = new(stats)
+
+	balancer.request_stats[request].handled = false
+	balancer.request_stats[request].start_time = time.Now()
+
 	//find next live server
 	for !servers[balancer.next_server].online {
 		balancer.next_server++
@@ -87,9 +95,11 @@ func (balancer *Balancer) Handle_death(*Server) {
 
 }
 
-func (balancer *Balancer) Ack_request(server_id int, req_id int) {
-	delete(balancer.acks[server_id], req_id)
-	//mark handled, update duration
+func (balancer *Balancer) Ack_request(server_id int, request *Request) {
+	balancer.request_stats[request].handled = true
+	delete(balancer.acks[server_id], request.id)
+	start_time := balancer.request_stats[request].start_time
+	balancer.request_stats[request].duration = time.Since(start_time)
 }
 
 func (balancer *Balancer) Handle_wakeup(*Server) {

@@ -4,6 +4,7 @@ import (
 	b "cos316-load-balancer/balancer"
 	"fmt"
 	"sync"
+	"time"
 )
 
 func system_info(servers []*b.Server, balancer *b.Balancer) {
@@ -39,8 +40,8 @@ func main() {
 	}
 	// assign each request
 	for i := range requests {
-		balancer.Assign_request(requests[i])
-		//balancer.Assign_request_round_robin(requests[i])
+		// balancer.Assign_request(requests[i])
+		balancer.Assign_request_round_robin(requests[i])
 	}
 	system_info(servers, balancer)
 	//make each server active (start handling queued requests)
@@ -48,6 +49,11 @@ func main() {
 		go servers[i].Work(balancer)
 	}
 
-	system_info(servers, balancer)
+	time.Sleep(5 * time.Second)
+	wg.Done()
+	// system_info(servers, balancer)
+	fmt.Printf("Average Response Time: %.3fs\n", b.MeasureAverageResponseTime(balancer))
+	fmt.Printf("Average Task Time: %.3fs\n", b.MeasureAverageTaskTime(balancer))
+
 	wg.Wait()
 }

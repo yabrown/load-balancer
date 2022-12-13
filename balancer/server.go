@@ -73,7 +73,7 @@ func (server *Server) Handle_request(balancer *Balancer) {
 		server.timeCompleted += taskTime
 		server.queueLength -= 1
 		server.loadOnQueue -= nextReq.load
-		balancer.Ack_request(server.id, nextReq.id)
+		balancer.Ack_request(server.id, nextReq)
 		if verbose {
 			fmt.Printf("\tFinished handling: %+v\n", *server)
 		} // formatting dereferences and prints fields
