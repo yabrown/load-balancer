@@ -6,8 +6,17 @@ import (
 )
 
 type Request struct {
-	load int
-	id   int
+	load     int
+	id       int
+	duration time.Duration
+}
+
+//defined load
+func NewRequest(id int, load int) (request *Request) {
+	request = new(Request)
+	request.id = id
+	request.load = load
+	return request
 }
 
 type Server struct {
@@ -18,14 +27,6 @@ type Server struct {
 	loadOnQueue   int
 	timeCompleted float32
 	queueLength   int
-}
-
-//defined load
-func NewRequest(id int, load int) (request *Request) {
-	request = new(Request)
-	request.id = id
-	request.load = load
-	return request
 }
 
 func NewServer(id int, cores int) *Server {
@@ -55,7 +56,7 @@ func (server *Server) Add_request(request *Request) {
 
 // do next task on queue, which just involves waiting the amount of time divided by cores
 // return when the task completes
-func (server *Server) Handle_request() {
+func (server *Server) Handle_request(balancer *Balancer) {
 	if server.online {
 		if verbose {
 			fmt.Printf("Server %d handling next request.\n", server.id)
@@ -66,15 +67,17 @@ func (server *Server) Handle_request() {
 		var nextReq *Request
 		nextReq, server.q = server.q.pop()
 
-		taskTime := float32(nextReq.load / server.cores)
+		taskTime := float32(nextReq.load) / float32(server.cores)
 		time.Sleep(time.Duration(taskTime) * time.Second)
 
 		server.timeCompleted += taskTime
 		server.queueLength -= 1
 		server.loadOnQueue -= nextReq.load
+		balancer.Ack_request(server.id, nextReq.id)
 		if verbose {
 			fmt.Printf("\tFinished handling: %+v\n", *server)
 		} // formatting dereferences and prints fields
+
 	}
 
 }
@@ -99,13 +102,13 @@ func (server *Server) Wake_up() {
 }
 
 // call as goroutine. keeps handling whatevers in front of the queue, returns when the server dies
-func (server *Server) Work() {
+func (server *Server) Work(balancer *Balancer) {
 	if verbose {
 		fmt.Printf("Server %d started listening.\n", server.id)
 	}
 	for {
 		if len(server.q) != 0 {
-			server.Handle_request()
+			server.Handle_request(balancer)
 		}
 		if !server.online {
 			if verbose {

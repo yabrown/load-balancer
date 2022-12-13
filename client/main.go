@@ -6,10 +6,12 @@ import (
 	"sync"
 )
 
-func print_servers(servers []*b.Server) {
+func system_info(servers []*b.Server, balancer *b.Balancer) {
+	print("\n")
 	for i := range servers {
-		fmt.Printf("Server status: %+v\n", *servers[i]) // formatting dereferences and prints fields
+		fmt.Printf("\tServer status: %+v\n", *servers[i]) // formatting dereferences and prints fields
 	}
+	fmt.Printf("Balancer status: %+v\n\n", balancer) // formatting dereferences and prints fields
 }
 
 func main() {
@@ -17,7 +19,7 @@ func main() {
 	wg.Add(1)
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
-	s2 := b.NewServer(1, 1)
+	s2 := b.NewServer(1, 4)
 	s3 := b.NewServer(2, 1)
 	s4 := b.NewServer(3, 1)
 	s5 := b.NewServer(4, 1)
@@ -31,23 +33,21 @@ func main() {
 	for i := 0; i < 10; i++ {
 		requests = append(requests, b.NewRequest(i, 1))
 	}
-	for i := range requests {
-		fmt.Printf("%+v\n", *requests[i])
-	}
 	//wake all servers up
 	for i := range servers {
 		servers[i].Wake_up()
 	}
 	// assign each request
 	for i := range requests {
-		balancer.Assign_request_round_robin(requests[i])
+		balancer.Assign_request(requests[i])
+		//balancer.Assign_request_round_robin(requests[i])
 	}
-	print_servers(servers)
+	system_info(servers, balancer)
 	//make each server active (start handling queued requests)
 	for i := range servers {
-		go servers[i].Work()
+		go servers[i].Work(balancer)
 	}
 
-	print_servers(servers)
+	system_info(servers, balancer)
 	wg.Wait()
 }
