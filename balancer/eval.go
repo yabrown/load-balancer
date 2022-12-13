@@ -5,15 +5,21 @@ import (
 	"time"
 )
 
-// response time per request
-// send a request, set a timer, see how long it takes to return?
-func MeasureResponseTime(b *Balancer) time.Duration {
-	startTime := time.Now()
-	task := NewRequest(-1, 100000)
-	b.Assign_request_round_robin(task)
-	// use channels to get a message back when the task is finished?
-	elapsed := time.Now().Sub(startTime)
-	return time.Duration(elapsed.Milliseconds())
+// average response time (latency) per task
+func MeasureResponseTime(b *Balancer) (float32, float32) {
+	// the balancer has an instance variable tracking the total wall-clock time
+	// for each task that has been completed
+	// divide that by the balance instance variable tracking the total number of completed tasks
+
+	// also compute the average load per task (sum over all servers the timeCompleted * load_per_core)/num of completed tasks
+	// need to check if the units for this are equal or not
+	for len(b.acks) != 0 {
+
+	}
+
+	elapsedTime := b.totalTime / float32(b.totalTasks)
+
+	return elapsedTime, 0
 
 }
 
