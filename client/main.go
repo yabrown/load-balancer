@@ -18,6 +18,8 @@ func system_info(servers []*b.Server, balancer *b.Balancer) {
 	fmt.Printf("Balancer status: %+v\n\n", balancer) // formatting dereferences and prints fields
 }
 
+// when running main.go, use the following form:
+// go run main.go [algorithm name: {"robin", "state"}] [time for servers to complete (int)] [# of tasks to run (int)]
 func main() {
 	var wg sync.WaitGroup
 	alg := os.Args[1]
