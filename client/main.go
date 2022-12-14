@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
 
 func system_info(servers []*b.Server, balancer *b.Balancer) {
@@ -23,25 +22,27 @@ func system_info(servers []*b.Server, balancer *b.Balancer) {
 func main() {
 	var wg sync.WaitGroup
 	alg := os.Args[1]
-	timeToSleep, _ := time.ParseDuration(os.Args[2] + "s")
+	numberOfTasks, _ := strconv.Atoi(os.Args[2])
+	taskLoadRange, _ := strconv.Atoi(os.Args[3])
+	//timeToSleep, _ := time.ParseDuration(os.Args[2] + "s")
 	wg.Add(1)
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
 	s2 := b.NewServer(1, 4)
 	s3 := b.NewServer(2, 1)
-	s4 := b.NewServer(3, 1)
+	s4 := b.NewServer(3, 8)
 	s5 := b.NewServer(4, 1)
 	// create balancer
 	servers := []*b.Server{s1, s2, s3, s4, s5}
-	balancer := b.NewBalancer(servers)
+	end_signal := make(chan bool)
+	balancer := b.NewBalancer(servers, end_signal)
 	if balancer == nil {
 	}
 	// create requests
 	requests := []*b.Request{}
-	numberOfTasks, _ := strconv.Atoi(os.Args[3])
 
 	for i := 0; i < numberOfTasks; i++ {
-		random := rand.Intn(1)
+		random := rand.Intn(taskLoadRange)
 		if random < 1 {
 			random += 1
 		}
@@ -65,12 +66,13 @@ func main() {
 		go servers[i].Work(balancer)
 	}
 	fmt.Println("Completing tasks with algorithm option", alg)
-	fmt.Println("Sleeping for", timeToSleep)
-	time.Sleep(timeToSleep)
-	wg.Done()
+	//fmt.Println("Sleeping for", timeToSleep)
+	<-end_signal
 	// system_info(servers, balancer)
-	fmt.Printf("Average Response Time: %.3fs\n", b.MeasureAverageResponseTime(balancer))
-	fmt.Printf("Average Task Time: %.3fs\n", b.MeasureAverageTaskTime(balancer))
+	fmt.Printf("Average Response Time: %.3fms\n", b.MeasureAverageResponseTime(balancer))
+	fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
+	fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
+	b.MeasureLoadDistribution(balancer)
 
 	wg.Wait()
 }
