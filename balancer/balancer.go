@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var verbose bool = true
+var verbose bool = false
 
 type stats struct {
 	start_time time.Time     // set as soon as it comes in (both assign_request functions)
@@ -100,6 +100,7 @@ func (balancer *Balancer) Ack_request(server_id int, request *Request) {
 	delete(balancer.acks[server_id], request.id)
 	start_time := balancer.request_stats[request].start_time
 	balancer.request_stats[request].duration = time.Since(start_time)
+
 }
 
 func (balancer *Balancer) Handle_wakeup(*Server) {

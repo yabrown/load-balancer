@@ -68,7 +68,13 @@ func (server *Server) Handle_request(balancer *Balancer) {
 		nextReq, server.q = server.q.pop()
 
 		taskTime := float32(nextReq.load) / float32(server.cores)
-		time.Sleep(time.Duration(taskTime) * time.Second)
+		fmt.Println(taskTime, "=", time.Duration(taskTime)*time.Second)
+		if taskTime < 1 {
+			taskTimeInMilli := taskTime * 1000
+			time.Sleep(time.Duration(taskTimeInMilli) * time.Millisecond)
+		} else {
+			time.Sleep(time.Duration(taskTime) * time.Second)
+		}
 
 		server.timeCompleted += taskTime
 		server.queueLength -= 1

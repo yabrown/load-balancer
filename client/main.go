@@ -3,6 +3,9 @@ package main
 import (
 	b "cos316-load-balancer/balancer"
 	"fmt"
+	"math/rand"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -17,6 +20,8 @@ func system_info(servers []*b.Server, balancer *b.Balancer) {
 
 func main() {
 	var wg sync.WaitGroup
+	alg := os.Args[1]
+	timeToSleep, _ := time.ParseDuration(os.Args[2] + "s")
 	wg.Add(1)
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
@@ -31,8 +36,14 @@ func main() {
 	}
 	// create requests
 	requests := []*b.Request{}
-	for i := 0; i < 10; i++ {
-		requests = append(requests, b.NewRequest(i, 1))
+	numberOfTasks, _ := strconv.Atoi(os.Args[3])
+
+	for i := 0; i < numberOfTasks; i++ {
+		random := rand.Intn(1)
+		if random < 1 {
+			random += 1
+		}
+		requests = append(requests, b.NewRequest(i, random))
 	}
 	//wake all servers up
 	for i := range servers {
@@ -40,16 +51,20 @@ func main() {
 	}
 	// assign each request
 	for i := range requests {
-		// balancer.Assign_request(requests[i])
-		balancer.Assign_request_round_robin(requests[i])
+		if alg == "robin" {
+			balancer.Assign_request_round_robin(requests[i])
+		} else if alg == "custom" {
+			balancer.Assign_request(requests[i])
+		}
 	}
-	system_info(servers, balancer)
+	// system_info(servers, balancer)
 	//make each server active (start handling queued requests)
 	for i := range servers {
 		go servers[i].Work(balancer)
 	}
-
-	time.Sleep(5 * time.Second)
+	fmt.Println("Completing tasks with algorithm option", alg)
+	fmt.Println("Sleeping for", timeToSleep)
+	time.Sleep(timeToSleep)
 	wg.Done()
 	// system_info(servers, balancer)
 	fmt.Printf("Average Response Time: %.3fs\n", b.MeasureAverageResponseTime(balancer))
