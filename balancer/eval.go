@@ -12,8 +12,8 @@ func MeasureAverageResponseTime(b *Balancer) float32 {
 
 	var totalTime float32 = 0
 	var totalTasks int = 0
-	for req, stats := range b.request_stats {
-		fmt.Println(req.id, stats.duration.Seconds())
+	for _, stats := range b.request_stats {
+		// fmt.Println(req.id, stats.duration.Seconds())
 
 		totalTime += float32(stats.duration.Seconds())
 
