@@ -53,7 +53,7 @@ func main() {
 	for i := range requests {
 		if alg == "robin" {
 			balancer.Assign_request_round_robin(requests[i])
-		} else if alg == "custom" {
+		} else if alg == "state" {
 			balancer.Assign_request(requests[i])
 		}
 	}
