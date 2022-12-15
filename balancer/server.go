@@ -25,7 +25,7 @@ type Server struct {
 	cores         int
 	online        bool
 	loadOnQueue   int
-	timeCompleted float32
+	timeCompleted float64
 	queueLength   int
 	total_tasks   int
 }
@@ -70,7 +70,7 @@ func (server *Server) Handle_request(balancer *Balancer) {
 		var nextReq *Request
 		nextReq, server.q = server.q.pop()
 
-		taskTime := float32(nextReq.load) / float32(server.cores)
+		taskTime := float64(nextReq.load) / float64(server.cores)
 		time.Sleep(time.Duration(taskTime) * time.Millisecond)
 
 		server.timeCompleted += taskTime
