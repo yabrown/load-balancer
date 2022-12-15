@@ -11,20 +11,19 @@ func MeasureAverageResponseTime(b *Balancer) float32 {
 	// divide that by the balance instance variable tracking the total number of completed tasks
 
 	var totalTime float32 = 0
-	var totalTasks int = 0
+	var totalTasksFinished int = 0
 	for _, stats := range b.request_stats {
 		// fmt.Println(req.id, stats.duration.Seconds())
-
 		totalTime += float32(stats.duration.Milliseconds())
 
 		if stats.handled {
-			totalTasks += 1
+			totalTasksFinished += 1
 		}
 	}
 
-	fmt.Println("Number of tasks:", totalTasks)
+	fmt.Println("Number of tasks:", totalTasksFinished)
 
-	averageTime := totalTime / float32(totalTasks)
+	averageTime := totalTime / float32(totalTasksFinished)
 
 	return averageTime
 
@@ -62,16 +61,19 @@ func MeasureAverageTaskTime(b *Balancer) float32 {
 func MeasureLoadDistribution(b *Balancer) {
 	load_per_core := make([]float32, len(b.servers))
 	load_per_server := make([]float32, len(b.servers))
+	tasks_per_server := make([]float32, len(b.servers))
 	for i, s := range b.servers {
 		isOnline, _ := s.State()
 		if isOnline {
 			load_per_core[i] = s.timeCompleted
 			load_per_server[i] = s.timeCompleted * float32(s.cores)
+			tasks_per_server[i] = float32(s.total_tasks)
 		}
 
 	}
 	fmt.Println("Total runtime for each server:\t", load_per_core)
 
 	fmt.Println("Total load for each server:\t", load_per_server)
+	fmt.Println("Total tasks for each server:\t", tasks_per_server)
 
 }

@@ -27,6 +27,7 @@ type Server struct {
 	loadOnQueue   int
 	timeCompleted float32
 	queueLength   int
+	total_tasks   int
 }
 
 func NewServer(id int, cores int) *Server {
@@ -37,6 +38,7 @@ func NewServer(id int, cores int) *Server {
 	server.online = false
 	server.loadOnQueue = 0
 	server.timeCompleted = 0
+	server.total_tasks = 0
 	if verbose {
 		fmt.Printf("Server created: %+v\n", *server)
 	} // formatting dereferences and prints fields
@@ -51,6 +53,7 @@ func (server *Server) Add_request(request *Request) {
 		server.q = server.q.push(request)
 		server.loadOnQueue += request.load
 		server.queueLength += 1
+		server.total_tasks++
 	}
 }
 

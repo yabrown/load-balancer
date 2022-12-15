@@ -19,7 +19,7 @@ func system_info(servers []*b.Server, balancer *b.Balancer) {
 
 // when running main.go, use the following form:
 // go run main.go [algorithm name: {"robin", "state"}] [time for servers to complete (int)] [# of tasks to run (int)]
-func main() {
+func scratch() {
 	var wg sync.WaitGroup
 	alg := os.Args[1]
 	numberOfTasks, _ := strconv.Atoi(os.Args[2])
@@ -28,9 +28,9 @@ func main() {
 	wg.Add(1)
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
-	s2 := b.NewServer(1, 4)
+	s2 := b.NewServer(1, 1)
 	s3 := b.NewServer(2, 1)
-	s4 := b.NewServer(3, 8)
+	s4 := b.NewServer(3, 1)
 	s5 := b.NewServer(4, 1)
 	// create balancer
 	servers := []*b.Server{s1, s2, s3, s4, s5}
@@ -75,4 +75,33 @@ func main() {
 	b.MeasureLoadDistribution(balancer)
 
 	wg.Wait()
+}
+
+func main() {
+	println("***********************************************************")
+	println("Equal cores, even distribution:\n")
+	const_cores_const_requests("robin")
+	const_cores_const_requests("state")
+	println("***********************************************************")
+	println("Equal cores, uneven distribution:\n")
+	const_cores_linear_requests("robin")
+	const_cores_linear_requests("state")
+	println("***********************************************************")
+	println("Equal cores, random distribution:\n")
+	const_cores_random_requests("robin")
+	const_cores_random_requests("state")
+	println("***********************************************************")
+	println("Linear cores, even distribution:\n")
+	linear_cores_const_requests("robin")
+	linear_cores_const_requests("state")
+	println("***********************************************************")
+	println("Linear cores, reverse linear distribution:\n")
+	linear_cores_reverse_requests("robin")
+	linear_cores_reverse_requests("state")
+	println("***********************************************************")
+	println("Linear cores, random distribution:\n")
+	linear_cores_random_requests("robin")
+	linear_cores_random_requests("state")
+	println("***********************************************************")
+	//scratch()
 }

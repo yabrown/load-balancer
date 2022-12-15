@@ -3,6 +3,7 @@ package balancer
 import (
 	"fmt"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type Balancer struct {
 	next_server          int
 	request_stats        map[*Request]*stats
 	end_signal           chan bool
+	mu                   sync.Mutex
 }
 
 func NewBalancer(servers []*Server, end_signal chan bool) *Balancer {
@@ -101,14 +103,17 @@ func (balancer *Balancer) Handle_death(*Server) {
 }
 
 func (balancer *Balancer) Ack_request(server_id int, request *Request) {
+	balancer.mu.Lock()
 	balancer.request_stats[request].handled = true
 	delete(balancer.acks[server_id], request.id)
 	balancer.num_requests_waiting--
 	start_time := balancer.request_stats[request].start_time
 	balancer.request_stats[request].duration = time.Since(start_time)
-	if balancer.num_requests_waiting == 0 {
+	if balancer.num_requests_waiting <= 0 {
 		balancer.end_signal <- true
 	}
+	//println(balancer.num_requests_waiting)
+	balancer.mu.Unlock()
 }
 
 func (balancer *Balancer) Handle_wakeup(*Server) {
