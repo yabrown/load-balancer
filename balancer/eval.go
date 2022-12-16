@@ -82,10 +82,10 @@ func MeasureLoadDistribution(b *Balancer) (float64, float64, float64) {
 		}
 
 	}
-	fmt.Println("Total runtime for each server:\t", load_per_core)
+	// fmt.Println("Total runtime for each server:\t", load_per_core)
 
-	fmt.Println("Total load for each server:\t", load_per_server)
-	fmt.Println("Total tasks for each server:\t", tasks_per_server)
+	// fmt.Println("Total load for each server:\t", load_per_server)
+	// fmt.Println("Total tasks for each server:\t", tasks_per_server)
 
 	averageRuntime, _ := s.Mean(load_per_core)
 	stdDevRuntime, _ := s.StandardDeviation(load_per_core)

@@ -69,39 +69,98 @@ func scratch() {
 	//fmt.Println("Sleeping for", timeToSleep)
 	<-end_signal
 	// system_info(servers, balancer)
-	fmt.Printf("Average Response Time: %.3fms\n", b.MeasureAverageResponseTime(balancer))
-	fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
-	fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
+	//fmt.Printf("Average Response Time: %.3fms\n", b.MeasureAverageResponseTime(balancer))
+	//fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
+	//fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
 	b.MeasureLoadDistribution(balancer)
 
 	wg.Wait()
 }
 
 func main() {
+	// println("***********************************************************")
+	// println("Equal cores, even distribution:\n")
+	// const_cores_const_requests("robin")
+	// const_cores_const_requests("state")
+	// println("***********************************************************")
+	// println("Equal cores, uneven distribution:\n")
+	// const_cores_linear_requests("robin")
+	// const_cores_linear_requests("state")
+	// println("***********************************************************")
+	// println("Equal cores, random distribution:\n")
+	// const_cores_random_requests("robin")
+	// const_cores_random_requests("state")
+	// println("***********************************************************")
+	// println("Linear cores, even distribution:\n")
+	// linear_cores_const_requests("robin")
+	// linear_cores_const_requests("state")
+	// println("***********************************************************")
+	// println("Linear cores, reverse linear distribution:\n")
+	// linear_cores_reverse_requests("robin")
+	// linear_cores_reverse_requests("state")
+	// println("***********************************************************")
+	// println("Linear cores, random distribution:\n")
+	// linear_cores_random_requests("robin")
+	// linear_cores_random_requests("state")
+	// taskData := make([]int, 0)
+	// algData := make([]string, 0)
+	// avgResponseData := make([]float64, 0)
+	// stdResponseData := make([]float64, 0)
+	// avgLoadData := make([]float64, 0)
+	// stdLoadData := make([]float64, 0)
+
+	same_reqs, _ := os.Create("diff_cores_same_requests_taskData.csv")
+	diff_reqs, err := os.Create("diff_cores_diff_requests_taskData.csv")
+	if err != nil {
+		panic(err)
+	}
+
+	// write data to 2 CSV files as we run the algorithms, so that the files can be exported to a Jupyter notebook
+	same_reqs.WriteString("Number of Tasks,Algorithm,Mean Response Time,Response Time Std. Dev.,Mean Weighted Load per Server,Weighted Load per Server Std. Dev.\n")
+	diff_reqs.WriteString("Number of Tasks,Algorithm,Mean Response Time,Response Time Std. Dev.,Mean Weighted Load per Server,Weighted Load per Server Std. Dev.\n")
+
+	defer same_reqs.Close()
+	defer diff_reqs.Close()
 	println("***********************************************************")
-	println("Equal cores, even distribution:\n")
-	const_cores_const_requests("robin")
-	const_cores_const_requests("state")
+	var i int64
+	for i = 10; i < 100; i += 2 {
+		for _, alg := range [2]string{"robin", "state"} {
+
+			// measure metrics for different cores, same load on each request
+
+			avgResponse, stdResponse, avgLoadDist, stdLoadDist := diff_cores_same_requests(alg, int(i))
+			// taskData = append(taskData, int(i))
+			// algData = append(algData, alg)
+			// avgResponseData = append(avgResponseData, avgResponse)
+			// stdResponseData = append(stdResponseData, stdResponse)
+			// avgLoadData = append(avgLoadData, avgLoadDist)
+			// stdLoadData = append(stdLoadData, stdLoadDist)
+
+			same_reqs.WriteString(strconv.FormatInt(i, 10) + ",")
+			same_reqs.WriteString(alg + ",")
+			same_reqs.WriteString(strconv.FormatFloat(avgResponse, 'f', 3, 64) + ",")
+			same_reqs.WriteString(strconv.FormatFloat(stdResponse, 'f', 3, 64) + ",")
+			same_reqs.WriteString(strconv.FormatFloat(avgLoadDist, 'f', 3, 64) + ",")
+			same_reqs.WriteString(strconv.FormatFloat(stdLoadDist, 'f', 3, 64) + "\n")
+			same_reqs.Sync()
+
+			// measure metrics for different cores, randomized load on each request
+
+			avgResponse, stdResponse, avgLoadDist, stdLoadDist = diff_cores_diff_requests(alg, int(i))
+			diff_reqs.WriteString(strconv.FormatInt(i, 10) + ",")
+			diff_reqs.WriteString(alg + ",")
+			diff_reqs.WriteString(strconv.FormatFloat(avgResponse, 'f', 3, 64) + ",")
+			diff_reqs.WriteString(strconv.FormatFloat(stdResponse, 'f', 3, 64) + ",")
+			diff_reqs.WriteString(strconv.FormatFloat(avgLoadDist, 'f', 3, 64) + ",")
+			diff_reqs.WriteString(strconv.FormatFloat(stdLoadDist, 'f', 3, 64) + "\n")
+			diff_reqs.Sync()
+
+		}
+	}
 	println("***********************************************************")
-	println("Equal cores, uneven distribution:\n")
-	const_cores_linear_requests("robin")
-	const_cores_linear_requests("state")
-	println("***********************************************************")
-	println("Equal cores, random distribution:\n")
-	const_cores_random_requests("robin")
-	const_cores_random_requests("state")
-	println("***********************************************************")
-	println("Linear cores, even distribution:\n")
-	linear_cores_const_requests("robin")
-	linear_cores_const_requests("state")
-	println("***********************************************************")
-	println("Linear cores, reverse linear distribution:\n")
-	linear_cores_reverse_requests("robin")
-	linear_cores_reverse_requests("state")
-	println("***********************************************************")
-	println("Linear cores, random distribution:\n")
-	linear_cores_random_requests("robin")
-	linear_cores_random_requests("state")
-	println("***********************************************************")
+
+	same_reqs.Sync()
+	diff_reqs.Sync()
+
 	//scratch()
 }

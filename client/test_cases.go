@@ -7,15 +7,18 @@ import (
 )
 
 func analyze(balancer *b.Balancer) {
-	fmt.Printf("Average Response Time: %.3fms\n", b.MeasureAverageResponseTime(balancer))
-	fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
-	fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
-	b.MeasureLoadDistribution(balancer)
+
+	// fmt.Printf("Average Response Time: %.3fms\n", b.MeasureResponseTime(balancer))
+	// fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
+	// fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
+	// b.MeasureLoadDistribution(balancer)
 }
 
 // Sophie, write whatever you want here
-func data(balancer *b.Balancer) {
-
+func data(balancer *b.Balancer) (float64, float64, float64, float64) {
+	averageResponseTime, stdDevResponseTime, _ := b.MeasureResponseTime(balancer)
+	averageLoadDist, stdDevLoadDist, _ := b.MeasureLoadDistribution(balancer)
+	return averageResponseTime, stdDevResponseTime, averageLoadDist, stdDevLoadDist
 }
 
 // servers: 5, each with 1 core
@@ -307,9 +310,10 @@ func linear_cores_random_requests(alg string) {
 	analyze(balancer)
 }
 
+// Case One:
 // servers: 5, each with 1 core
 // tasks: 1000, with best distribution-- even
-func diff_cores_same_requests(alg string, num_tasks int) {
+func diff_cores_same_requests(alg string, num_tasks int) (float64, float64, float64, float64) {
 	//timeToSleep, _ := time.ParseDuration(os.Args[2] + "s")
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
@@ -327,7 +331,7 @@ func diff_cores_same_requests(alg string, num_tasks int) {
 	requests := []*b.Request{}
 
 	for i := 0; i < num_tasks; i++ {
-		load := 10
+		load := 2
 		requests = append(requests, b.NewRequest(i, load))
 	}
 	//wake all servers up
@@ -351,10 +355,15 @@ func diff_cores_same_requests(alg string, num_tasks int) {
 	//fmt.Println("Sleeping for", timeToSleep)
 	<-end_signal
 	// system_info(servers, balancer)
-	data(balancer)
+	avgResponse, stdResponse, avgLoadDist, stdLoadDist := data(balancer)
+
+	//fmt.Printf("Average response time of %fms with a standard deviation of %fms.\n", avgResponse, stdResponse)
+	//fmt.Printf("Average weighted load for each server of %f with a standard deviation of %f.\n", avgLoadDist, stdLoadDist)
+	return avgResponse, stdResponse, avgLoadDist, stdLoadDist
 }
 
-func diff_cores_diff_requests(alg string, num_tasks int) {
+// Case 2
+func diff_cores_diff_requests(alg string, num_tasks int) (float64, float64, float64, float64) {
 	//timeToSleep, _ := time.ParseDuration(os.Args[2] + "s")
 	// create 5 servers
 	s1 := b.NewServer(0, 1)
@@ -370,9 +379,9 @@ func diff_cores_diff_requests(alg string, num_tasks int) {
 	}
 	// create requests
 	requests := []*b.Request{}
-
+	rand.Seed(int64(num_tasks))
 	for i := 0; i < num_tasks; i++ {
-		random := (rand.Intn(20) + 1) * 10
+		random := (rand.Intn(20) + 1)
 		requests = append(requests, b.NewRequest(i, random))
 	}
 	//wake all servers up
@@ -396,5 +405,7 @@ func diff_cores_diff_requests(alg string, num_tasks int) {
 	//fmt.Println("Sleeping for", timeToSleep)
 	<-end_signal
 	// system_info(servers, balancer)
-	data(balancer)
+	avgResponse, stdResponse, avgLoadDist, stdLoadDist := data(balancer)
+	return avgResponse, stdResponse, avgLoadDist, stdLoadDist
+
 }
