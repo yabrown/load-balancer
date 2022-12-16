@@ -13,6 +13,11 @@ func analyze(balancer *b.Balancer) {
 	b.MeasureLoadDistribution(balancer)
 }
 
+// Sophie, write whatever you want here
+func data(balancer *b.Balancer) {
+
+}
+
 // servers: 5, each with 1 core
 // tasks: 1000, each random with load 1-100
 func const_cores_random_requests(alg string) {
@@ -346,7 +351,7 @@ func diff_cores_same_requests(alg string, num_tasks int) {
 	//fmt.Println("Sleeping for", timeToSleep)
 	<-end_signal
 	// system_info(servers, balancer)
-	analyze(balancer)
+	data(balancer)
 }
 
 func diff_cores_diff_requests(alg string, num_tasks int) {
@@ -391,5 +396,5 @@ func diff_cores_diff_requests(alg string, num_tasks int) {
 	//fmt.Println("Sleeping for", timeToSleep)
 	<-end_signal
 	// system_info(servers, balancer)
-	analyze(balancer)
+	data(balancer)
 }
