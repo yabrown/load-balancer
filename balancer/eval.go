@@ -2,21 +2,22 @@ package balancer
 
 import (
 	"fmt"
-	"sort"
+	s "github.com/montanaflynn/stats"
 )
 
 // average response time (latency) per task
-func MeasureAverageResponseTime(b *Balancer) float64 {
+func MeasureResponseTime(b *Balancer) (float64, float64, float64) {
 	// the balancer has an instance variable tracking the total wall-clock time
 	// for each task that has been completed
 	// divide that by the balance instance variable tracking the total number of completed tasks
 
 	var totalTime float64 = 0
 	var totalTasksFinished int = 0
+	times := make([]float64, len(b.request_stats))
 	for _, stats := range b.request_stats {
 		// fmt.Println(req.id, stats.duration.Seconds())
 		totalTime += float64(stats.duration.Milliseconds())
-
+		times = append(times, float64(stats.duration.Milliseconds()))
 		if stats.handled {
 			totalTasksFinished += 1
 		}
@@ -26,7 +27,10 @@ func MeasureAverageResponseTime(b *Balancer) float64 {
 
 	averageTime := totalTime / float64(totalTasksFinished)
 
-	return averageTime
+	stdDevTime, _ := s.StandardDeviation(times)
+	medianTime, _ := s.Median(times)
+
+	return averageTime, stdDevTime, medianTime
 
 }
 
@@ -46,20 +50,26 @@ func MeasureAverageTaskLoad(b *Balancer) float64 {
 
 //compute the average load per task (sum over all servers the timeCompleted * load_per_core)/num of completed tasks
 // need to check if the units for this are equal or not
-func MeasureAverageTaskTime(b *Balancer) float64 {
+func MeasureAverageTaskTime(b *Balancer) (float64, float64, float64) {
 	var totalTime float64 = 0
+	times := make([]float64, len(b.servers))
 	for _, s := range b.servers {
 		totalTime += s.timeCompleted
+		times = append(times, s.timeCompleted)
 	}
 
-	return totalTime / float64(len(b.request_stats))
+	averageTime := totalTime / float64(len(b.request_stats))
+	stdDevTime, _ := s.StandardDeviation(times)
+	medianTime, _ := s.Median(times)
+
+	return averageTime, stdDevTime, medianTime
 
 }
 
 // load distribution
 // look at each server, check the total load on that server proportional
 // to the number of cores, and compare to the overall load on the balancer
-func MeasureLoadDistribution(b *Balancer) {
+func MeasureLoadDistribution(b *Balancer) (float64, float64, float64) {
 	load_per_core := make([]float64, len(b.servers))
 	load_per_server := make([]float64, len(b.servers))
 	tasks_per_server := make([]float64, len(b.servers))
@@ -77,36 +87,9 @@ func MeasureLoadDistribution(b *Balancer) {
 	fmt.Println("Total load for each server:\t", load_per_server)
 	fmt.Println("Total tasks for each server:\t", tasks_per_server)
 
-}
-
-func MeasureMedianResponseTime(b *Balancer) (float64, int) {
-
-	times := make([]float64, len(b.request_stats))
-	totalTasksFinished := 0
-	for _, stats := range b.request_stats {
-		// fmt.Println(req.id, stats.duration.Seconds())
-		times = append(times, float64(stats.duration.Milliseconds()))
-
-		if stats.handled {
-			totalTasksFinished += 1
-		}
-	}
-
-	sortedTimes := make([]float64, len(times))
-	copy(sortedTimes, times)
-
-	sort.Float64s(sortedTimes)
-
-	l := len(sortedTimes)
-	median := 0.0
-	if l == 0 {
-		return 0, 0
-	} else if l%2 == 0 {
-		median = (sortedTimes[l/2-1] + sortedTimes[l/2]) / 2
-	} else {
-		median = sortedTimes[l/2]
-	}
-
-	return median, totalTasksFinished
+	averageRuntime, _ := s.Mean(load_per_core)
+	stdDevRuntime, _ := s.StandardDeviation(load_per_core)
+	medianRuntime, _ := s.Median(load_per_core)
+	return averageRuntime, stdDevRuntime, medianRuntime
 
 }
