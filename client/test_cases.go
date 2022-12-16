@@ -7,11 +7,13 @@ import (
 )
 
 func analyze(balancer *b.Balancer) {
+	RTAverage, RTStdDev, RTMedian := b.MeasureResponseTime(balancer)
+	TTAverage, _, _ := b.MeasureAverageTaskTime(balancer)
+	fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
+	fmt.Printf("Average Task Time: %.3f\n", TTAverage)
+	fmt.Printf("Response Time: Average = %.3f, Variation = %.3f, Median = %.3fms\n", RTAverage, RTStdDev/RTAverage, RTMedian)
 
-	// fmt.Printf("Average Response Time: %.3fms\n", b.MeasureResponseTime(balancer))
-	// fmt.Printf("Average Task Load: %.3fms\n", b.MeasureAverageTaskLoad(balancer))
-	// fmt.Printf("Average Task Time: %.3fms\n", b.MeasureAverageTaskTime(balancer))
-	// b.MeasureLoadDistribution(balancer)
+	b.MeasureLoadDistribution(balancer)
 }
 
 // Sophie, write whatever you want here
@@ -379,7 +381,6 @@ func diff_cores_diff_requests(alg string, num_tasks int) (float64, float64, floa
 	}
 	// create requests
 	requests := []*b.Request{}
-	rand.Seed(int64(num_tasks))
 	for i := 0; i < num_tasks; i++ {
 		random := (rand.Intn(20) + 1)
 		requests = append(requests, b.NewRequest(i, random))

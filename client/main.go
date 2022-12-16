@@ -77,7 +77,7 @@ func scratch() {
 	wg.Wait()
 }
 
-func main() {
+func graph() {
 	// println("***********************************************************")
 	// println("Equal cores, even distribution:\n")
 	// const_cores_const_requests("robin")
@@ -123,7 +123,7 @@ func main() {
 	defer diff_reqs.Close()
 	println("***********************************************************")
 	var i int64
-	for i = 10; i < 100; i += 2 {
+	for i = 1000; i < 4000; i += 250 {
 		for _, alg := range [2]string{"robin", "state"} {
 
 			// measure metrics for different cores, same load on each request
@@ -163,4 +163,43 @@ func main() {
 	diff_reqs.Sync()
 
 	//scratch()
+}
+
+func main() {
+
+	// println("***********************************************************")
+	// const_cores_const_requests("robin")
+	// println("***********************************************************")
+	// const_cores_const_requests("state")
+	// println("***********************************************************")
+
+	// println("***********************************************************")
+	// linear_cores_const_requests("robin")
+	// println("***********************************************************")
+	// linear_cores_const_requests("state")
+	// println("***********************************************************")
+
+	// println("***********************************************************")
+	// const_cores_random_requests("robin")
+	// println("***********************************************************")
+	// const_cores_random_requests("state")
+	// println("***********************************************************")
+
+	// println("***********************************************************")
+	// linear_cores_random_requests("robin")
+	// println("***********************************************************")
+	// linear_cores_random_requests("state")
+	// println("***********************************************************")
+
+	// println("***********************************************************")
+	// const_cores_linear_requests("robin")
+	// println("***********************************************************")
+	// const_cores_linear_requests("state")
+	// println("***********************************************************")
+
+	// println("***********************************************************")
+	// linear_cores_reverse_requests("robin")
+	// println("***********************************************************")
+	// linear_cores_reverse_requests("state")
+	// println("***********************************************************")
 }

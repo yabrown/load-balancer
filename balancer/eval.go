@@ -70,26 +70,30 @@ func MeasureAverageTaskTime(b *Balancer) (float64, float64, float64) {
 // look at each server, check the total load on that server proportional
 // to the number of cores, and compare to the overall load on the balancer
 func MeasureLoadDistribution(b *Balancer) (float64, float64, float64) {
-	load_per_core := make([]float64, len(b.servers))
-	load_per_server := make([]float64, len(b.servers))
-	tasks_per_server := make([]float64, len(b.servers))
+	load_per_core := make([]float32, len(b.servers))
+	load_per_server := make([]float32, len(b.servers))
+	tasks_per_server := make([]float32, len(b.servers))
 	for i, s := range b.servers {
 		isOnline, _ := s.State()
 		if isOnline {
-			load_per_core[i] = s.timeCompleted
-			load_per_server[i] = s.timeCompleted * float64(s.cores)
-			tasks_per_server[i] = float64(s.total_tasks)
+			load_per_core[i] = float32(s.timeCompleted)
+			load_per_server[i] = float32(s.timeCompleted) * float32(s.cores)
+			tasks_per_server[i] = float32(s.total_tasks)
 		}
 
 	}
-	// fmt.Println("Total runtime for each server:\t", load_per_core)
+	fmt.Println("Total runtime for each server:\t", load_per_core)
 
-	// fmt.Println("Total load for each server:\t", load_per_server)
-	// fmt.Println("Total tasks for each server:\t", tasks_per_server)
-
-	averageRuntime, _ := s.Mean(load_per_core)
-	stdDevRuntime, _ := s.StandardDeviation(load_per_core)
-	medianRuntime, _ := s.Median(load_per_core)
+	fmt.Println("Total load for each server:\t", load_per_server)
+	fmt.Println("Total tasks for each server:\t", tasks_per_server)
+	load_per_core_64 := make([]float64, len(b.servers))
+	for i := range b.servers {
+		load_per_core_64[i] = float64(load_per_core[i])
+	}
+	averageRuntime, _ := s.Mean(load_per_core_64)
+	stdDevRuntime, _ := s.StandardDeviation(load_per_core_64)
+	medianRuntime, _ := s.Median(load_per_core_64)
+	fmt.Printf("Server Load: Average = %.3f, Variation = %.3f, Median = %.3fms\n", averageRuntime, stdDevRuntime, medianRuntime)
 	return averageRuntime, stdDevRuntime, medianRuntime
 
 }
